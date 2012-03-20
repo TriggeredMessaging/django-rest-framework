@@ -3,6 +3,8 @@ Customizable serialization.
 """
 from django.db import models
 from django.db.models.query import QuerySet
+from mongoengine import Document 
+from mongoengine.queryset import QuerySet as MongoQuerySet
 from django.utils.encoding import smart_unicode, is_protected_type, smart_str
 
 import inspect
@@ -253,6 +255,32 @@ class Serializer(object):
         """
         return smart_unicode(obj, strings_only=True)
 
+
+    def mongoengine_doc_to_json(self,me_doc, sub_documents=False):
+        import copy, datetime, time
+        from mongoengine import Document, ObjectIdField
+        
+        def _convert_to_json(me_doc):
+            struct = {}
+            ignore = ['_id', 'password']
+            for k in me_doc:
+                if k in ignore: continue
+                try:
+                    value = me_doc[k]
+                except:
+                    value = k # not an array or dict
+                
+                if sub_documents and hasattr(value, "__class__") and issubclass(value.__class__, Document):
+                    struct[k] = _convert_to_json(value)
+                elif isinstance(value, datetime.datetime):
+                    struct[k] = int(time.mktime(value.timetuple()) + value.microsecond/1e6)
+                elif isinstance(value, (unicode, str)):
+                    struct[k] = value
+            
+            return struct
+        
+        return _convert_to_json(me_doc)
+
     def serialize(self, obj):
         """
         Convert any object into a serializable representation.
@@ -264,6 +292,24 @@ class Serializer(object):
         elif isinstance(obj, (tuple, list, set, QuerySet, types.GeneratorType)):
             # basic iterables
             return self.serialize_iter(obj)
+        elif isinstance(obj, (MongoQuerySet)):
+            # MongoQuerySet. Acts much like a list, each element being a mongoengine.document.Document-derived object
+            try:
+                # iterate through the queryset, serializing one mongoengine.document.Document-derived object at a time.
+                json_info=[] 
+                for array_element in obj:
+                    json_info .append( self.mongoengine_doc_to_json(array_element, sub_documents=True) ) # todo iterate
+                    
+            except Exception as e:
+                logger.exception("Exception serializing MongoQuerySet")
+            
+            return json_info # self.serialize_iter(obj)
+        elif issubclass(type(obj),Document):
+            # convert the mongoengine.document.Document-derived object
+            # used for e.g. http://127.0.0.1:8000/api/7ako4p1/
+            #todo - test this is ok. 
+            json_info = self.mongoengine_doc_to_json(obj)
+            return json_info
         elif isinstance(obj, models.Manager):
             # Manager objects
             return self.serialize_manager(obj)
