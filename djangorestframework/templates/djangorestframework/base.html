@@ -6,7 +6,7 @@
 {% load static %}
 <html xmlns="http://www.w3.org/1999/xhtml">
   	<head>
-      	<link rel="stylesheet" type="text/css" href='/media/lib/djangorestframework/css/style.css'/>
+      	<link rel="stylesheet" type="text/css" href='{% get_static_prefix %}djangorestframework/css/style.css'/>
       	{% block extrastyle %}{% endblock %}
   		<title>{% block title %}Django REST framework - {{ name }}{% endblock %}</title>
   		{% block extrahead %}{% endblock %}

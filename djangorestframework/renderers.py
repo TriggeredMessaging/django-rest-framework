@@ -4,6 +4,13 @@ Renderers are used to serialize a View's output into specific media types.
 Django REST framework also provides HTML and PlainText renderers that help self-document the API,
 by serializing the output along with documentation regarding the View, output status and headers,
 and providing forms and links depending on the allowed methods, renderers and parsers on the View.
+
+Be sure to include something like this in settings:
+
+# Template used for rendering the API in HTML format. 
+DJANGO_REST_FRAMEWORK_API_TEMPLATE = 'djangorestframework/api.html'
+
+
 """
 from django import forms
 from django.conf import settings
@@ -20,6 +27,8 @@ from djangorestframework import VERSION
 
 import string
 from urllib import quote_plus
+
+
 
 __all__ = (
     'BaseRenderer',
@@ -367,8 +376,7 @@ class DocumentingHTMLRenderer(DocumentingTemplateRenderer):
 
     media_type = 'text/html'
     format = 'html'
-    template = 'djangorestframework/api.html'
-
+    template = settings.DJANGO_REST_FRAMEWORK_API_TEMPLATE 
 
 class DocumentingXHTMLRenderer(DocumentingTemplateRenderer):
     """
@@ -379,7 +387,7 @@ class DocumentingXHTMLRenderer(DocumentingTemplateRenderer):
 
     media_type = 'application/xhtml+xml'
     format = 'xhtml'
-    template = 'djangorestframework/api.html'
+    template = settings.DJANGO_REST_FRAMEWORK_API_TEMPLATE
 
 
 class DocumentingPlainTextRenderer(DocumentingTemplateRenderer):
