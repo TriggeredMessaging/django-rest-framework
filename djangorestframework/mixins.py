@@ -439,7 +439,12 @@ class ResourceMixin(object):
 
     def get_bound_form(self, content=None, method=None):
         if hasattr(self._resource, 'get_bound_form'):
-            return self._resource.get_bound_form(content, method=method)
+            try:
+                return self._resource.get_bound_form(content, method=method)
+            except Exception as e:
+                ##logger.exception('exception in get_bound_form')
+                print 'exception in get_bound_form'
+                return None
         else:
             return None
 
