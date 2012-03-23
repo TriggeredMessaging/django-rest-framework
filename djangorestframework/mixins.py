@@ -153,7 +153,7 @@ class RequestMixin(object):
         self._data = data = self.request.POST.copy()
         self._files = self.request.FILES
 
-        # Method overloading - change the method and remove the param from the content.
+        # Method overloading - change the method and remove the param from resourcethe content.
         if self._METHOD_PARAM in data:
             # NOTE: unlike `get`, `pop` on a `QueryDict` seems to return a list of values.
             self._method = self._data.pop(self._METHOD_PARAM)[0].upper()
@@ -443,7 +443,7 @@ class ResourceMixin(object):
                 return self._resource.get_bound_form(content, method=method)
             except Exception as e:
                 ##logger.exception('exception in get_bound_form')
-                print 'exception in get_bound_form'
+                #ignore - print 'exception in get_bound_form'
                 return None
         else:
             return None
