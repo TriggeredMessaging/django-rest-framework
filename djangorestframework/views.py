@@ -126,9 +126,13 @@ class View(ResourceMixin, RequestMixin, ResponseMixin, AuthMixin, DjangoView):
         """
         # If this view has a resource that's been overridden, then use that resource for the name
         if getattr(self, 'resource', None) not in _resource_classes:
-            name = self.resource.__name__
-            name = _remove_trailing_string(name, 'Resource')
-            name += getattr(self, '_suffix', '')
+            # if the resource class has a get_name function, use that...
+            if getattr(self.resource,'display_name',None):
+                name = self.resource.display_name
+            else:
+                name = self.resource.__name__
+                name = _remove_trailing_string(name, 'Resource')
+                name += getattr(self, '_suffix', '')
 
         # If it's a view class with no resource then grok the name from the class name
         else:
