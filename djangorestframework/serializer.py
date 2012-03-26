@@ -262,7 +262,7 @@ class Serializer(object):
         
         def _convert_to_json(me_doc):
             struct = {}
-            ignore = ['_id', 'password']
+            ignore = ['_id', 'password'] 
             for k in me_doc:
                 if k in ignore: continue
                 try:
@@ -276,6 +276,12 @@ class Serializer(object):
                     struct[k] = int(time.mktime(value.timetuple()) + value.microsecond/1e6)
                 elif isinstance(value, (unicode, str)):
                     struct[k] = value
+                elif isinstance(value, (dict, list, tuple, int, long, float)):
+                    # other serializable type, e.g. int.  (list of serializable types are at http://docs.python.org/library/json.html#json.JSONEncoder)
+                    try:
+                        struct[k] = value
+                    except:
+                        pass # unknown error putting the value in a dict, just swallow it.
             
             return struct
         
