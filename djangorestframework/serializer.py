@@ -256,7 +256,7 @@ class Serializer(object):
         return smart_unicode(obj, strings_only=True)
 
 
-    def mongoengine_doc_to_json(self,me_doc, sub_documents=False):
+    def mongoengine_doc_to_dict(self,me_doc, sub_documents=False):
         import copy, datetime, time
         from mongoengine import Document, ObjectIdField
         
@@ -276,7 +276,7 @@ class Serializer(object):
                     struct[k] = int(time.mktime(value.timetuple()) + value.microsecond/1e6)
                 elif isinstance(value, (unicode, str)):
                     struct[k] = value
-                elif isinstance(value, (dict, list, tuple, int, long, float)):
+                elif isinstance(value, (dict,  tuple, int, long, float)):
                     # other serializable type, e.g. int.  (list of serializable types are at http://docs.python.org/library/json.html#json.JSONEncoder)
                     try:
                         struct[k] = value
@@ -304,7 +304,7 @@ class Serializer(object):
                 # iterate through the queryset, serializing one mongoengine.document.Document-derived object at a time.
                 json_info=[] 
                 for array_element in obj:
-                    json_info .append( self.mongoengine_doc_to_json(array_element, sub_documents=True) ) # todo iterate
+                    json_info .append( self.mongoengine_doc_to_dict(array_element, sub_documents=True) ) # todo iterate
                     
             except Exception as e:
                 logger.exception("Exception serializing MongoQuerySet")
@@ -314,7 +314,7 @@ class Serializer(object):
             # convert the mongoengine.document.Document-derived object
             # used for e.g. http://127.0.0.1:8000/api/7ako4p1/
             #todo - test this is ok. 
-            json_info = self.mongoengine_doc_to_json(obj)
+            json_info = self.mongoengine_doc_to_dict(obj)
             return json_info
         elif isinstance(obj, models.Manager):
             # Manager objects
