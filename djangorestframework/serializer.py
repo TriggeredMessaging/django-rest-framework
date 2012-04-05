@@ -1,9 +1,10 @@
 """
 Customizable serialization.
 """
+from bson.objectid import ObjectId
 from django.db import models
 from django.db.models.query import QuerySet
-from mongoengine import Document 
+from mongoengine import Document
 from mongoengine.queryset import QuerySet as MongoQuerySet
 from django.utils.encoding import smart_unicode, is_protected_type, smart_str
 
@@ -256,41 +257,53 @@ class Serializer(object):
         return smart_unicode(obj, strings_only=True)
 
 
-    def mongoengine_doc_to_dict(self,me_doc, sub_documents=False):
+    def mongoengine_doc_to_dict(self,me_doc, sub_documents=False, mapping = {}):
         import copy, datetime, time
         from mongoengine import Document, ObjectIdField
-        
+
         def _convert_to_json(me_doc):
             struct = {}
-            ignore = ['_id', 'password'] 
+            ignore = ['_id', 'password']
             for k in me_doc:
-                if k in ignore: continue
+                if k in ignore and not k in mapping: continue
                 try:
                     value = me_doc[k]
                 except:
                     value = k # not an array or dict
-                
+
+                # Map keys
+                if k in mapping:
+                    k = mapping[k]
+
                 if sub_documents and hasattr(value, "__class__") and issubclass(value.__class__, Document):
                     struct[k] = _convert_to_json(value)
                 elif isinstance(value, datetime.datetime):
                     struct[k] = int(time.mktime(value.timetuple()) + value.microsecond/1e6)
                 elif isinstance(value, (unicode, str)):
                     struct[k] = value
+                elif isinstance(value, ObjectId):
+                    struct[k] = str(value)
                 elif isinstance(value, (dict,  tuple, int, long, float)):
                     # other serializable type, e.g. int.  (list of serializable types are at http://docs.python.org/library/json.html#json.JSONEncoder)
                     try:
                         struct[k] = value
                     except:
                         pass # unknown error putting the value in a dict, just swallow it.
-            
+
             return struct
-        
+
         return _convert_to_json(me_doc)
 
     def serialize(self, obj):
         """
         Convert any object into a serializable representation.
         """
+
+        mapping  = {}
+        try:
+            mapping = self.mapping
+        except:
+            pass
 
         if isinstance(obj, (dict, models.Model)):
             # Model instances & dictionaries
@@ -302,19 +315,19 @@ class Serializer(object):
             # MongoQuerySet. Acts much like a list, each element being a mongoengine.document.Document-derived object
             try:
                 # iterate through the queryset, serializing one mongoengine.document.Document-derived object at a time.
-                json_info=[] 
+                json_info=[]
                 for array_element in obj:
-                    json_info .append( self.mongoengine_doc_to_dict(array_element, sub_documents=True) ) # todo iterate
-                    
+                    json_info .append( self.mongoengine_doc_to_dict(array_element, sub_documents=True, mapping = mapping) ) # todo iterate
+
             except Exception as e:
                 logger.exception("Exception serializing MongoQuerySet")
-            
+
             return json_info # self.serialize_iter(obj)
         elif issubclass(type(obj),Document):
             # convert the mongoengine.document.Document-derived object
             # used for e.g. http://127.0.0.1:8000/api/7ako4p1/
-            #todo - test this is ok. 
-            json_info = self.mongoengine_doc_to_dict(obj)
+            #todo - test this is ok.
+            json_info = self.mongoengine_doc_to_dict(obj, mapping = mapping)
             return json_info
         elif isinstance(obj, models.Manager):
             # Manager objects
