@@ -10,7 +10,8 @@ from django.utils.encoding import smart_unicode, is_protected_type, smart_str
 
 import inspect
 import types
-
+import logging
+logger = logging.getLogger()
 
 # We register serializer classes, so that we can refer to them by their
 # class names, if there are cyclical serialization heirachys.
@@ -278,7 +279,7 @@ class Serializer(object):
                 if sub_documents and hasattr(value, "__class__") and issubclass(value.__class__, Document):
                     struct[k] = _convert_to_json(value)
                 elif isinstance(value, datetime.datetime):
-                    struct[k] = int(time.mktime(value.timetuple()) + value.microsecond/1e6)
+                    struct[k] = value.strftime('%Y-%m-%dT%H:%M:%S.%fZ') # MJA 27apr12 - I prefer ISO datetime format here.  int(time.mktime(value.timetuple()) + value.microsecond/1e6)
                 elif isinstance(value, (unicode, str)):
                     struct[k] = value
                 elif isinstance(value, ObjectId):
