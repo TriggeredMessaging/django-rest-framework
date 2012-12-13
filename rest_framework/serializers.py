@@ -311,6 +311,8 @@ class BaseSerializer(Field):
         field to relationships.
         """
         if self.source:
+            if self.source == '*':
+                return self.to_native(obj)
             for component in self.source.split('.'):
                 obj = getattr(obj, component)
                 if is_simple_callable(obj):
