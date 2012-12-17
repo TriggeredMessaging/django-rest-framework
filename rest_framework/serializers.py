@@ -128,17 +128,6 @@ class BaseSerializer(Field):
         """
         return {}
 
-    def get_excluded_fieldnames(self):
-        """
-        Returns the fieldnames that should not be validated.
-        """
-        excluded_fields = list(self.opts.exclude)
-        if self.opts.fields:
-            for field in self.fields.keys() + self.get_default_fields().keys():
-                if field not in list(self.opts.fields) + excluded_fields:
-                    excluded_fields.append(field)
-        return excluded_fields
-
     def get_fields(self):
         """
         Returns the complete set of fields for the object as a dict.
@@ -170,10 +159,6 @@ class BaseSerializer(Field):
         if self.opts.exclude:
             for key in self.opts.exclude:
                 ret.pop(key, None)
-
-        # Initialize the fields
-        for key, field in ret.items():
-            field.initialize(parent=self, field_name=key)
 
         return ret
 
@@ -214,6 +199,7 @@ class BaseSerializer(Field):
         ret.fields = {}
 
         for field_name, field in self.fields.items():
+            field.initialize(parent=self, field_name=field_name)
             key = self.get_field_key(field_name)
             value = field.field_to_native(obj, field_name)
             ret[key] = value
@@ -227,6 +213,7 @@ class BaseSerializer(Field):
         """
         reverted_data = {}
         for field_name, field in self.fields.items():
+            field.initialize(parent=self, field_name=field_name)
             try:
                 field.field_from_native(data, files, field_name, reverted_data)
             except ValidationError as err:
@@ -407,7 +394,6 @@ class ModelSerializer(Serializer):
                 field = self.get_field(model_field)
 
             if field:
-                field.initialize(parent=self, field_name=model_field.name)
                 ret[model_field.name] = field
 
         for field_name in self.opts.read_only_fields:
@@ -494,6 +480,18 @@ class ModelSerializer(Serializer):
         except KeyError:
             return ModelField(model_field=model_field, **kwargs)
 
+    def get_validation_exclusions(self):
+        """
+        Return a list of field names to exclude from model validation.
+        """
+        cls = self.opts.model
+        opts = get_concrete_model(cls)._meta
+        exclusions = [field.name for field in opts.fields + opts.many_to_many]
+        for field_name, field in self.fields.items():
+            if field_name in exclusions and not field.read_only:
+                exclusions.remove(field_name)
+        return exclusions
+
     def restore_object(self, attrs, instance=None):
         """
         Restore the model instance.
@@ -518,7 +516,7 @@ class ModelSerializer(Serializer):
 
         instance = self.opts.model(**attrs)
         try:
-            instance.full_clean(exclude=list(self.get_excluded_fieldnames()))
+            instance.full_clean(exclude=self.get_validation_exclusions())
         except ValidationError, err:
             self._errors = err.message_dict
             return None

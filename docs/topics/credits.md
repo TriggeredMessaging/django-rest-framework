@@ -77,6 +77,8 @@ The following people have helped make REST framework great.
 * Venkata Subramanian Mahalingam - [annacoder]
 * George Kappel - [gkappel]
 * Colin Murtaugh - [cmurtaugh]
+* Simon Pantzare - [pilt]
+* Szymon Teżewski - [sunscrapers]
 
 Many thanks to everyone who's contributed to the project.
 
@@ -189,3 +191,5 @@ To contact the author directly:
 [annacoder]: https://github.com/annacoder
 [gkappel]: https://github.com/gkappel
 [cmurtaugh]: https://github.com/cmurtaugh
+[pilt]: https://github.com/pilt
+[sunscrapers]: https://github.com/sunscrapers
